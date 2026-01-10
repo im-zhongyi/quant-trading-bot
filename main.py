@@ -1,0 +1,63 @@
+import argparse
+from backtests.run_backtest import run_backtest
+from backtests.run_bulk_backtests import run_bulk_backtests
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Quant Trading Backtest Runner"
+    )
+
+    subparsers = parser.add_subparsers(
+        dest="mode",
+        required=True
+    )
+
+    # ---------- SINGLE BACKTEST ----------
+    single_parser = subparsers.add_parser(
+        "single",
+        help="Run a single backtest"
+    )
+
+    single_parser.add_argument(
+        "symbol",
+        type=str,
+        help="Trading pair, e.g. BTC/USDT"
+    )
+
+    single_parser.add_argument(
+        "timeframe",
+        type=str,
+        help="Candle timeframe, e.g. 15m, 1h"
+    )
+
+    single_parser.add_argument(
+        "limit",
+        type=int,
+        help="Number of candles"
+    )
+
+    # ---------- BULK BACKTEST ----------
+    subparsers.add_parser(
+        "bulk",
+        help="Run bulk backtests"
+    )
+
+    args = parser.parse_args()
+
+    # ---------- ROUTING ----------
+    if args.mode == "single":
+        print("▶ Running SINGLE backtest")
+        run_backtest(
+            symbol=args.symbol,
+            timeframe=args.timeframe,
+            limit=args.limit
+        )
+
+    elif args.mode == "bulk":
+        print("🚀 Running BULK backtests")
+        run_bulk_backtests()
+
+
+if __name__ == "__main__":
+    main()

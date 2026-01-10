@@ -1,0 +1,9 @@
+rsi:
+  length: 14
+  oversold: 30
+  overbought: 70
+
+macd:
+  fast: 12
+  slow: 26
+  signal: 9
