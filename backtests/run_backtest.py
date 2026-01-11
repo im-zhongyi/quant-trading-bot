@@ -4,14 +4,9 @@ import ccxt
 import yaml
 from strategies.macd_rsi import apply_indicators, generate_signals
 from utils.metrics import sharpe_ratio, max_drawdown
-from utils.dates import generate_timestamp
+from utils.dates import generate_timestamp, get_current_date
 INITIAL_CAPITAL = 10_000
-FEE_RATE = 0.01  # 0.1%
-# define stop loss percentage
-STOP_LOSS_PCT = 0.02
-RISK_PER_TRADE = 0.01
-
-
+FEE_RATE = 0.01  # 1%
 
 def fetch_data(symbol, timeframe, limit):
     exchange = ccxt.binance()
@@ -47,12 +42,9 @@ def fetch_data(symbol, timeframe, limit):
     return df
 
 
-def run_backtest(
-    symbol="ADA/USDT",
-    timeframe="4h", # 1m, 5m, 15m, 30m, 1h, 4h, 1d
-    limit=10000,
-    return_metrics=False
-):
+def run_backtest(symbol, timeframe, limit, risk_per_trade, stop_loss_pct, return_metrics=False): 
+    # Log the parameters of the backtest
+    print(f"Risk per trade: {risk_per_trade*100}%, Stop loss: {stop_loss_pct*100}%")
     with open("config/strategy.yaml") as f:
         strategy_config = yaml.safe_load(f)
 
@@ -75,7 +67,7 @@ def run_backtest(
 
         # EXIT
         if position > 0:
-            stop_loss_hit = price <= entry_price * (1 - STOP_LOSS_PCT)
+            stop_loss_hit = price <= entry_price * (1 - stop_loss_pct)
             signal_exit = signal == -1
 
             if stop_loss_hit or signal_exit:
@@ -103,7 +95,7 @@ def run_backtest(
 
         # ENTRY
         if position == 0 and signal == 1:
-            position = (capital * RISK_PER_TRADE) / (price * STOP_LOSS_PCT)
+            position = (capital * risk_per_trade) / (price * stop_loss_pct)
             position = min(position, capital / price)
 
             entry_price = price
@@ -121,15 +113,20 @@ def run_backtest(
 
     equity_curve = pd.Series(equity_curve)
     returns = equity_curve.pct_change().dropna()
+
     # Format trade log filename
+    current_date = get_current_date()
     current_timestamp = generate_timestamp()
     sanitized_symbol = symbol.replace("/", "_")
+    # Format risk & stop-loss as percentages with no dot (optional)
+    risk_str = str(int(risk_per_trade * 100))
+    stop_str = str(int(stop_loss_pct * 100))
     # Create folder base on symbol
-    os.makedirs(f"data/processed/{sanitized_symbol}", exist_ok=True)
+    os.makedirs(f"data/processed/{current_date}/{sanitized_symbol}", exist_ok=True)
     trade_filename = (
-        f"trades_{sanitized_symbol}_{timeframe}_{len(df)}_{current_timestamp}.csv"
+        f"trades_{sanitized_symbol}_{timeframe}_{len(df)}_r{risk_str}_s{stop_str}_{current_timestamp}.csv"
     )
-    trade_log_path = f"data/processed/{sanitized_symbol}/{trade_filename}"
+    trade_log_path = f"data/processed/{current_date}/{sanitized_symbol}/{trade_filename}"
     
     trades_df = pd.DataFrame(trades)
     trades_df.to_csv(trade_log_path, index=False)
@@ -145,6 +142,7 @@ def run_backtest(
     print("Max Drawdown:", round(max_drawdown(equity_curve) * 100, 2), "%")
     if return_metrics:
         return {
+            "limit": len(df),
             "final_capital": round(equity_curve.iloc[-1], 2),
             "sharpe": round(sharpe_ratio(returns), 2),
             "max_drawdown": round(max_drawdown(equity_curve) * 100, 2)

@@ -1,7 +1,7 @@
 rsi:
   length: 14
-  oversold: 30
-  overbought: 70
+  oversold: 40
+  overbought: 60
 
 macd:
   fast: 12

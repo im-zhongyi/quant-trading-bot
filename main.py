@@ -20,22 +20,41 @@ def main():
     )
 
     single_parser.add_argument(
-        "symbol",
+        "--symbol",
         type=str,
+        default="BTC/USDT",
         help="Trading pair, e.g. BTC/USDT"
     )
 
     single_parser.add_argument(
-        "timeframe",
+        "--timeframe",
         type=str,
+        default="4h",
         help="Candle timeframe, e.g. 15m, 1h"
     )
 
     single_parser.add_argument(
-        "limit",
+        "--limit",
         type=int,
+        default=5000,
         help="Number of candles"
     )
+
+    single_parser.add_argument(
+        "--risk",
+        type=int,
+        default=2,
+        help="Risk per trade as a percentage (e.g. 2 for 2%)"
+    )
+
+
+    single_parser.add_argument(
+        "--stoploss",
+        type=int,
+        default=5,
+        help="Stop loss as a percentage (e.g. 2 for 2%)"
+    )
+
 
     # ---------- BULK BACKTEST ----------
     subparsers.add_parser(
@@ -51,7 +70,9 @@ def main():
         run_backtest(
             symbol=args.symbol,
             timeframe=args.timeframe,
-            limit=args.limit
+            limit=args.limit,
+            risk_per_trade=args.risk / 100,
+            stop_loss_pct=args.stoploss / 100
         )
 
     elif args.mode == "bulk":

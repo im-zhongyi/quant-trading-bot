@@ -19,7 +19,7 @@ def apply_indicators(df, config):
 
 def generate_signals(df, config):
     df["signal"] = 0
-
+    rsi_cfg = config["rsi"]
     macd_col = "MACD_12_26_9"
     signal_col = "MACDs_12_26_9"
 
@@ -34,12 +34,12 @@ def generate_signals(df, config):
     )
 
     df.loc[
-        bullish_cross & (df["rsi"] < 40),
+        bullish_cross & (df["rsi"] < rsi_cfg["oversold"]),
         "signal"
     ] = 1
 
     df.loc[
-        bearish_cross & (df["rsi"] > 60),
+        bearish_cross & (df["rsi"] > rsi_cfg["overbought"]),
         "signal"
     ] = -1
 

@@ -6,3 +6,10 @@ def generate_timestamp():
     # Format as YYYYMMDDhhmmss
     timestamp = now.strftime("%Y%m%d%H%M%S")
     return timestamp
+
+def get_current_date():
+    # Get the current local date and time
+    now = datetime.now()
+    # Format as YYYYMMDD
+    date = now.strftime("%Y%m%d")
+    return date
