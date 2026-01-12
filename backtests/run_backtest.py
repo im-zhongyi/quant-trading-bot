@@ -44,12 +44,12 @@ def fetch_data(symbol, timeframe, limit):
 
 def run_backtest(symbol, timeframe, limit, risk_per_trade, stop_loss_pct, return_metrics=False): 
     # Log the parameters of the backtest
-    print(f"Risk per trade: {risk_per_trade*100}%, Stop loss: {stop_loss_pct*100}%")
+    print(f"Risk per trade: {round(risk_per_trade*100,1)}%, Stop loss: {round(stop_loss_pct*100,1)}%")
     with open("config/strategy.yaml") as f:
         strategy_config = yaml.safe_load(f)
 
     df = fetch_data(symbol, timeframe, limit)
-    df = apply_indicators(df, strategy_config)
+    df = apply_indicators(df, strategy_config) 
     df = generate_signals(df, strategy_config)
     df.dropna(inplace=True)
 
@@ -133,6 +133,7 @@ def run_backtest(symbol, timeframe, limit, risk_per_trade, stop_loss_pct, return
 
 
     # print summary for each backtest run
+    print("------------ BACKTEST SUMMARY ------------")
     print(f"Trades saved to {trade_log_path}")
     print(f"Total trades: {len(trades_df)}")
     print("Total BUY signals:", (df["signal"] == 1).sum())
@@ -140,6 +141,7 @@ def run_backtest(symbol, timeframe, limit, risk_per_trade, stop_loss_pct, return
     print("Final Capital:", round(equity_curve.iloc[-1], 2))
     print("Sharpe Ratio:", round(sharpe_ratio(returns), 2))
     print("Max Drawdown:", round(max_drawdown(equity_curve) * 100, 2), "%")
+    print("-------------------------------------------")
     if return_metrics:
         return {
             "limit": len(df),

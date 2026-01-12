@@ -1,76 +1,58 @@
 from backtests.run_backtest import run_backtest
+from utils.config import load_yaml
 from utils.dates import generate_timestamp
 import time
 import os
 import pandas as pd
+from itertools import product
 
-SYMBOLS = [
-    "BTC/USDT",
-    "ETH/USDT",
-    "ADA/USDT",
-    "SOL/USDT",
-]
-
-TIMEFRAMES = [
-    "15m",
-    "1h",
-    "4h"
-]
-
-LIMITS = [
-    2000,
-    5000
-]
-
-RISK_PER_TRADE = [
-    0.05, 
-    0.04, 
-    0.03
-]
-
-STOP_LOSS_PCT = [
-    0.10,
-    0.07,
-    0.05
-]
-def run_bulk_backtests():
+# default config path: "config/bulk_backtest.yaml"
+def run_bulk_backtests(config_path="config/bulk_backtest.yaml"):
+    config = load_yaml(config_path)
+    combinations = product(
+        config["symbols"],
+        config["timeframes"],
+        config["limits"],
+        config["risk_per_trade"],
+        config["stop_loss_pct"],
+        
+    ) 
     summary_rows = []
+    # total = len(config["symbols"]) * len(config["timeframes"]) * len(config["limits"]) * len(config["risk_per_trade"]) * len(config["stop_loss_pct"])
+    for n, (symbol, timeframe, limit, risk_per_trade, stop_loss_pct) in enumerate(combinations,1):
+        print(
+            f"Running backtest: {symbol} | {timeframe} | {limit}"
+        )
 
-    for symbol in SYMBOLS:
-        for timeframe in TIMEFRAMES:
-            for limit in LIMITS:
-                for risk_per_trade in RISK_PER_TRADE:
-                    for stop_loss_pct in STOP_LOSS_PCT:
-                        print(
-                            f"Running backtest: {symbol} | {timeframe} | {limit}"
-                        )
+        try:
+            # print(f"Progress: {n}/{total} runs completed", end="\r", flush=True)
+            metrics = run_backtest(
+                symbol=symbol,
+                timeframe=timeframe,
+                limit=limit,
+                risk_per_trade=risk_per_trade,
+                stop_loss_pct=stop_loss_pct,
+                return_metrics=True
+            )
 
-                        try:
-                            metrics = run_backtest(
-                                symbol=symbol,
-                                timeframe=timeframe,
-                                limit=limit,
-                                risk_per_trade=risk_per_trade,
-                                stop_loss_pct=stop_loss_pct,
-                                return_metrics=True
-                            )
-
-                        
-                            summary_rows.append({
-                                "symbol": symbol,
-                                "timeframe": timeframe,
-                                "candles": metrics["limit"],
-                                "risk_per_trade": risk_per_trade,
-                                "stop_loss_pct": stop_loss_pct,
-                                "final_capital": metrics["final_capital"],
-                                "sharpe": metrics["sharpe"],
-                                "max_drawdown": metrics["max_drawdown"]
-                            })
-                            time.sleep(1.2)
-                        except Exception as e:
-                            print(
-                                f"❌ Failed: {symbol} {timeframe} {limit} → {e}"
-                            )
+        
+            summary_rows.append({
+                "symbol": symbol,
+                "timeframe": timeframe,
+                "candles": metrics["limit"],
+                "risk_per_trade": risk_per_trade,
+                "stop_loss_pct": stop_loss_pct,
+                "final_capital": metrics["final_capital"],
+                "sharpe": metrics["sharpe"],
+                "max_drawdown": metrics["max_drawdown"],
+                "profit_margin": str((metrics["final_capital"]/config["initial_capital"] - 1) *100 )+"%"
+            })
+            
+            time.sleep(1.2)
+        except Exception as e:
+            print(
+                f"❌ Failed: {symbol} {timeframe} {limit} → {e}"
+            )
     # -------------------
     # SAVE SUMMARY CSV
     # -------------------

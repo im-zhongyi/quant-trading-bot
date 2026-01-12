@@ -1,6 +1,7 @@
 import argparse
 from backtests.run_backtest import run_backtest
 from backtests.run_bulk_backtests import run_bulk_backtests
+from utils.config import get_config_filepath
 
 
 def main():
@@ -57,11 +58,17 @@ def main():
 
 
     # ---------- BULK BACKTEST ----------
-    subparsers.add_parser(
+    bulk_parser =subparsers.add_parser(
         "bulk",
         help="Run bulk backtests"
     )
 
+    bulk_parser.add_argument(
+        "--config",
+        type=str,
+        default="bulk_backtest",
+        help="Path to bulk backtest config YAML"
+    )
     args = parser.parse_args()
 
     # ---------- ROUTING ----------
@@ -76,8 +83,9 @@ def main():
         )
 
     elif args.mode == "bulk":
+        filename = get_config_filepath(args.config)
         print("🚀 Running BULK backtests")
-        run_bulk_backtests()
+        run_bulk_backtests(filename)
 
 
 if __name__ == "__main__":
